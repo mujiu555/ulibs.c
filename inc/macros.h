@@ -7,8 +7,8 @@
 #define LOOP for (;;)
 
 #define RANGES(var, from, to, skip)                                            \
-  for (var = (from); (((from) > (to)) ? (var < (to)) : (var > (to)));          \
-       (((from) > (to)) ? (var += (skip) : (var -= (skip))))
+  for (size_t var = (from); (((from) > (to)) ? (var < (to)) : (var > (to)));   \
+       (((from) > (to)) ? (var += (skip)) : (var -= (skip))))
 
 #define FOREACH(T, var, arr, len)                                              \
   for (size_t var##__keep = true, var##__count = 0, var##_len = (len);         \
