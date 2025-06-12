@@ -9,12 +9,16 @@ typedef uint8_t ulib_u8i; // unsigned 8-bit integer
 typedef uint16_t ulib_u16i;
 typedef uint32_t ulib_u32i;
 
-extern void (*ulib_qsort)(void *left, void *right, size_t size,
-                          int (*cmp)(const void *a, const void *b, size_t len));
-// TODO: reimplement qsort
+int ulib_cmp(const void *a, const void *b, void *len);
 
-extern void (*ulib_msort)(void *arr, size_t len, size_t size,
-                          int (*cmp)(const void *a, const void *b, size_t len));
+// TODO: reimplement qsort
+extern void (*ulib_qsort)(void *left, void *right, size_t size,
+                          int (*cmp)(const void *a, const void *b, void *ctx),
+                          void *ctx);
+
 // TODO: reimplement msort
+extern void (*ulib_msort)(void *arr, size_t len, size_t size,
+                          int (*cmp)(const void *a, const void *b, void *ctx),
+                          void *ctx);
 
 #endif /* ifndef ULIB__UTIL_H__ */

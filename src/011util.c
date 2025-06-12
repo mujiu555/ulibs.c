@@ -3,6 +3,39 @@
 #include <stddef.h>
 #include <string.h>
 
+int ulib_cmp(const void *a, const void *b, void *len) {
+  size_t size = *(size_t *)len;
+  // FIXME: diff will contiain number less than int
+  // this function should be able to do larger comparation
+  // NOTE: might be able to compare lsb only
+  int diff = 0;
+  switch (size) {
+  case sizeof(int8_t):
+    diff = *(int8_t *)a - *(int8_t *)b;
+    break;
+  case sizeof(int16_t):
+    diff = *(int16_t *)a - *(int16_t *)b;
+    break;
+  case sizeof(int32_t):
+    diff = *(int32_t *)a - *(int32_t *)b;
+    break;
+  case sizeof(int64_t):
+    diff = *(int64_t *)a - *(int64_t *)b;
+    break;
+  default:
+#if defined(LITTLE_ENDIAN)
+    for (int i = size - 1; i >= 0; i--) {
+#elif defined(BIG_ENDIAN)
+    for (int i = 0; i < size; i++) {
+#endif
+      diff <<= sizeof(ulib_u8i) * 8;
+      diff += *((ulib_u8i *)a + i) - *((ulib_u8i *)b + i);
+    }
+    break;
+  }
+  return diff;
+}
+
 /**
  * @brief multiple byte swap, used only for util internally
  *
@@ -37,21 +70,21 @@ static void util_internal_swap(void *a, void *b, size_t len) {
  * @param cmp comparation method
  * @param a pointer points to variable to be compared
  * @param b pointer points to variable to be compared
- * @param len bytes to be compared
+ * @param ctx
  */
-static inline void *internal_pivot(void *left, void *right, size_t size,
-                                   int (*cmp)(const void *a, const void *b,
-                                              size_t len)) {
+static inline void *
+internal_pivot(void *left, void *right, size_t size,
+               int (*cmp)(const void *a, const void *b, void *ctx), void *ctx) {
 
   size_t len = (ptrdiff_t)(right - left) / size;
   void *mid = left + (len / 2) * size;
-  if (cmp(left, mid, size) > 0) {
+  if (cmp(left, mid, ctx) > 0) {
     util_internal_swap(left, mid, size);
   }
-  if (cmp(left, right, size) > 0) {
+  if (cmp(left, right, ctx) > 0) {
     util_internal_swap(left, right, size);
   }
-  if (cmp(mid, right, size) > 0) {
+  if (cmp(mid, right, ctx) > 0) {
     util_internal_swap(mid, right, size);
   }
   return mid;
@@ -70,11 +103,12 @@ static inline void *internal_pivot(void *left, void *right, size_t size,
  * @param cmp comparation function
  * @param a pointer points to variable to be compared
  * @param b pointer points to variable to be compared
- * @param len bytes to be compared
+ * @param ctx
  */
 static void *internal_partation(ulib_u8i **begin, ulib_u8i **end, size_t size,
                                 int (*cmp)(const void *a, const void *b,
-                                           size_t len)) {
+                                           void *ctx),
+                                void *ctx) {
   void *const left = *begin;
   void *const right = *end;
 
@@ -82,7 +116,7 @@ static void *internal_partation(ulib_u8i **begin, ulib_u8i **end, size_t size,
   ulib_u8i *r = right;
 
   // choose initial pivot position
-  void *pivot = internal_pivot(l, r, size, cmp);
+  void *pivot = internal_pivot(l, r, size, cmp, ctx);
   util_internal_swap(pivot, l, size);
 
   ulib_u8i base[size];
@@ -94,9 +128,9 @@ static void *internal_partation(ulib_u8i **begin, ulib_u8i **end, size_t size,
   while (l < r) {
     // *right <= base
     // find number smaller than base and on right part
-    while (l < r && cmp(r, &base, size) >= 0) {
+    while (l < r && cmp(r, &base, ctx) >= 0) {
       // move the variable same as the base to the outerest side
-      if (!cmp(r, &base, size)) {
+      if (!cmp(r, &base, ctx)) {
         util_internal_swap(rp, r, size);
         rp -= size;
       }
@@ -105,8 +139,8 @@ static void *internal_partation(ulib_u8i **begin, ulib_u8i **end, size_t size,
     memcpy(l, r, size); // *left = *right
     // *left >= base
     // find number bigger than base and on left part
-    while (l < r && cmp(l, &base, size) <= 0) {
-      if (!cmp(l, &base, size)) {
+    while (l < r && cmp(l, &base, ctx) <= 0) {
+      if (!cmp(l, &base, ctx)) {
         util_internal_swap(lp, l, size);
         lp += size;
       }
@@ -145,11 +179,11 @@ static void *internal_partation(ulib_u8i **begin, ulib_u8i **end, size_t size,
  * @param cmp comparation method
  * @param a pointer points to variable to be compared
  * @param b pointer points to variable to be compared
- * @param len bytes to be compared
+ * @param ctx
  */
 static void internal_qsort(void *left, void *right, size_t size,
-                           int (*cmp)(const void *a, const void *b,
-                                      size_t len)) {
+                           int (*cmp)(const void *a, const void *b, void *ctx),
+                           void *ctx) {
   if (ept_nullpointer_exception(left) || ept_nullpointer_exception(right) ||
       ept_assert(right < left, EPT_OUTOFBOUND) ||
       // size of a variable cannot be negative or zero
@@ -164,23 +198,24 @@ static void internal_qsort(void *left, void *right, size_t size,
 
   ulib_u8i *l = left;
   ulib_u8i *r = right;
-  void *pivot = internal_partation(&l, &r, size, cmp);
+  void *pivot = internal_partation(&l, &r, size, cmp, ctx);
 
-  internal_qsort(left, l, size, cmp);
-  internal_qsort(r, right, size, cmp);
+  internal_qsort(left, l, size, cmp, ctx);
+  internal_qsort(r, right, size, cmp, ctx);
 
   return;
 }
 
 void internal_msort(void *arr, size_t len, size_t size,
-                    int (*cmp)(const void *a, const void *b, size_t len)) {
+                    int (*cmp)(const void *a, const void *b, void *ctx),
+                    void *ctx) {
   return;
 }
 
 void (*ulib_qsort)(void *arr, void *right, size_t size,
-                   int (*cmp)(const void *a, const void *b,
-                              size_t len)) = internal_qsort;
+                   int (*cmp)(const void *a, const void *b, void *ctx),
+                   void *ctx) = internal_qsort;
 
 void (*ulib_msort)(void *arr, size_t len, size_t size,
-                   int (*cmp)(const void *a, const void *b,
-                              size_t len)) = internal_msort;
+                   int (*cmp)(const void *a, const void *b, void *len),
+                   void *ctx) = internal_msort;
