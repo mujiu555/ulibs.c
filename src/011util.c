@@ -76,7 +76,7 @@ static inline void *
 internal_pivot(void *left, void *right, size_t size,
                int (*cmp)(const void *a, const void *b, void *ctx), void *ctx) {
 
-  size_t len = (ptrdiff_t)(right - left) / size;
+  size_t len = (ptrdiff_t)(right - left) / size + 1;
   void *mid = left + (len / 2) * size;
   if (cmp(left, mid, ctx) > 0) {
     util_internal_swap(left, mid, size);
@@ -206,16 +206,33 @@ static void internal_qsort(void *left, void *right, size_t size,
   return;
 }
 
-void internal_msort(void *arr, size_t len, size_t size,
-                    int (*cmp)(const void *a, const void *b, void *ctx),
-                    void *ctx) {
-  return;
+void *internal_bsearch(void *begin, void *end, void *target, size_t size,
+                       int (*cmp)(const void *a, const void *b, void *ctx),
+                       void *ctx) {
+  if (ept_assert(end < begin, EPT_OUTOFBOUND)) {
+    return NULL;
+  }
+  while (begin <= end) {
+    size_t len = (ptrdiff_t)(end - begin) / size + 1;
+    ulib_u8i *mid = begin + len / 2 * size;
+
+    const int r = cmp(mid, target, ctx);
+
+    if (!r) {
+      return mid;
+    } else if (r > 0) {
+      end = mid - size;
+    } else {
+      begin = mid + size;
+    }
+  }
+  return NULL;
 }
 
-void (*ulib_qsort)(void *arr, void *right, size_t size,
-                   int (*cmp)(const void *a, const void *b, void *ctx),
-                   void *ctx) = internal_qsort;
+void (*ulib_sort)(void *begin, void *end, size_t size,
+                  int (*cmp)(const void *a, const void *b, void *ctx),
+                  void *ctx) = internal_qsort;
 
-void (*ulib_msort)(void *arr, size_t len, size_t size,
-                   int (*cmp)(const void *a, const void *b, void *len),
-                   void *ctx) = internal_msort;
+void *(*ulib_bsearch)(void *begin, void *end, void *target, size_t size,
+                      int (*cmp)(const void *a, const void *b, void *ctx),
+                      void *ctx) = internal_bsearch;
