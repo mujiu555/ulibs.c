@@ -2,11 +2,12 @@
 #define ULIB__SLICEVIEW_H__
 
 #include <stddef.h>
+#include "util.h"
 
 struct view_t {
   struct {
-    size_t len;
-    size_t size;
+    ulib_size len;
+    ulib_size size;
   } head;
   void *begin;
   void *end;

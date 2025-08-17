@@ -8,12 +8,12 @@
 
 struct linked_list_node_t {
   struct {
-    ulib_u8i size;
-    size_t   nth;
+    ulib_u8   size;
+    ulib_size nth;
   } head;
   struct linked_list_node_t *next;
   struct linked_list_node_t *prev;
-  ulib_u8i                   data[];
+  ulib_u8                    data[];
 };
 
 typedef struct linked_list_node_t node_t;
@@ -48,7 +48,7 @@ static inline void internal_node_del(node_t *begin, node_t *end) {
  * @param idx index of desired element
  * @return poinster points to the data
  */
-void *list_index(list obj, size_t idx) {
+void *list_index(list obj, ulib_size idx) {
   if (ept_nullpointer_exception(obj) ||
       ept_outofbound_exception(obj->head.length, idx)) {
     return NULL;
@@ -72,7 +72,7 @@ void *list_index(list obj, size_t idx) {
  * @param size size of data stored witin the node
  * @return a new node
  */
-static node_t *internal_node_alloc(size_t size) {
+static node_t *internal_node_alloc(ulib_size size) {
   node_t *obj = ulib_alloc(sizeof(node_t) + size);
   if (ept_nullpointer_exception(obj)) {
     return obj;
@@ -91,7 +91,7 @@ static node_t *internal_node_alloc(size_t size) {
  * @return a new node with data
  */
 static node_t *
-internal_node_init(size_t size, size_t nth, node_t *prev, void *data) {
+internal_node_init(ulib_size size, ulib_size nth, node_t *prev, void *data) {
   if (ept_nullpointer_exception(data)) {
     return NULL;
   }
@@ -182,7 +182,7 @@ list list_clone(list obj) {
   return no;
 }
 
-list list_slice(list obj, size_t skip, size_t len) {
+list list_slice(list obj, ulib_size skip, ulib_size len) {
   list    no  = internal_list_alloc();
   node_t *n   = obj->begin;
   int     cnt = 0;
@@ -196,7 +196,7 @@ list list_slice(list obj, size_t skip, size_t len) {
   return no;
 }
 
-list list_slice_autofree(list *obj, size_t skip, size_t len) {
+list list_slice_autofree(list *obj, ulib_size skip, ulib_size len) {
   list no = list_slice(*obj, skip, len);
   list_free(obj);
   return no;
@@ -264,7 +264,7 @@ list list_concat_autofree(list *a, list *b) {
  * @param nth the index of current element
  * @return list itself
  */
-list list_insert(list obj, void *data, size_t size, size_t nth) {
+list list_insert(list obj, void *data, ulib_size size, ulib_size nth) {
   if (ept_outofbound_exception(obj->head.length + 1, nth)) {
     return NULL;
   }
@@ -357,7 +357,7 @@ list list_insert(list obj, void *data, size_t size, size_t nth) {
  * @param len remove how much nodes
  * @return list itself
  */
-list list_remove(list obj, size_t skip, size_t len) {
+list list_remove(list obj, ulib_size skip, ulib_size len) {
   if (ept_outofbound_exception(obj->head.length, skip)) {
     return NULL;
   }
@@ -457,13 +457,14 @@ list list_remove(list obj, size_t skip, size_t len) {
  * @param idx index
  * @param _ no used, for compatible with the interface of lsort
  */
-static void *internal_index_for_sort(const void *obj, size_t idx, void *ctx) {
+static void *
+internal_index_for_sort(const void *obj, ulib_size idx, void *ctx) {
   _ept__unused(ctx);
   return list_index((list)obj, idx);
 }
 
 list list_sort(
-  list obj, size_t size, int (*cmp)(const void *a, const void *b, void *len)
+  list obj, ulib_size size, int (*cmp)(const void *a, const void *b, void *len)
 ) {
   lsort(
     obj, 0, obj->head.length - 1, size, internal_index_for_sort, cmp, &size
@@ -489,7 +490,7 @@ list list_reverse(list obj) {
 }
 
 void *list_find(
-  list obj, void *val, int (*cmp)(const void *a, const void *b, size_t len)
+  list obj, void *val, int (*cmp)(const void *a, const void *b, ulib_size len)
 ) {
   for (node_t *n = obj->begin; n != NULL; n = n->next) {
     if (!cmp(n->data, val, n->head.size)) {
@@ -498,10 +499,11 @@ void *list_find(
   }
   return NULL;
 }
+
 // TODO:
 void *list_findall(list obj);
 
-list list_replcae(list obj, list to, size_t skip, size_t len);
+list list_replcae(list obj, list to, ulib_size skip, ulib_size len);
 
 list list_replaceall(list obj, char pattern[]);
 

@@ -4,10 +4,23 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <uchar.h>
 
-typedef uint8_t  ulib_u8i;  // unsigned 8-bit integer
-typedef uint16_t ulib_u16i; // same...
-typedef uint32_t ulib_u32i;
+typedef int8_t  ulib_i8;
+typedef int16_t ulib_i16;
+typedef int32_t ulib_i32;
+typedef int64_t ulib_i64;
+
+typedef uint8_t  ulib_u8;  // unsigned 8-bit integer
+typedef uint16_t ulib_u16; // same...
+typedef uint32_t ulib_u32;
+typedef uint64_t ulib_u64;
+
+typedef char8_t  ulib_char8;
+typedef char16_t ulib_char16;
+typedef char32_t ulib_char32;
+
+typedef size_t ulib_size;
 
 int ulib_cmp(const void *a, const void *b, void *len);
 

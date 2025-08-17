@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-inline static ima_t *internal_alloc(size_t len, size_t size) {
+inline static ima_t *internal_alloc(ulib_size len, ulib_size size) {
   ima_t *o = ulib_alloc(sizeof(ima_t) + len * size);
   if (ept_nullpointer_exception(o)) {
     return o;
@@ -20,7 +20,7 @@ inline static ima_t *internal_alloc(size_t len, size_t size) {
   return o;
 }
 
-ima ima_init(size_t len, size_t size, void const *args) {
+ima ima_init(ulib_size len, ulib_size size, void const *args) {
   ima_t *obj = internal_alloc(len, size);
   memcpy(obj->data, args, len * size);
   return obj;
@@ -68,7 +68,7 @@ ima ima_concat_autofree(ima *pa, ima *pb) {
   return obj;
 }
 
-ima ima_slice(ima obj, size_t skip, size_t len) {
+ima ima_slice(ima obj, ulib_size skip, ulib_size len) {
   if (ept_outofbound_exception(obj->head.len, skip + len)) {
     return NULL;
   }
@@ -79,7 +79,7 @@ ima ima_slice(ima obj, size_t skip, size_t len) {
   return n;
 }
 
-ima ima_remove(ima obj, size_t skip, size_t len) {
+ima ima_remove(ima obj, ulib_size skip, ulib_size len) {
   if (ept_outofbound_exception(obj->head.len, skip + len)) {
     return NULL;
   }
@@ -98,12 +98,12 @@ ima ima_remove(ima obj, size_t skip, size_t len) {
   return n;
 }
 
-ima ima_multiple(ima obj, size_t times) {
+ima ima_multiple(ima obj, ulib_size times) {
   ima_t *n = internal_alloc(obj->head.len * times, obj->head.size);
   if (ept_nullpointer_exception(obj)) {
     return obj;
   }
-  RANGES(size_t, i, 0, times, 1) {
+  RANGES(ulib_size, i, 0, times, 1) {
     memcpy(n->data + i * obj->head.cap, obj->data, obj->head.cap);
   }
   return n;
@@ -114,7 +114,7 @@ ima ima_reverse(ima obj) {
   if (ept_nullpointer_exception(obj)) {
     return obj;
   }
-  for (size_t i = 0; i < obj->head.cap; i += obj->head.size) {
+  for (ulib_size i = 0; i < obj->head.cap; i += obj->head.size) {
     memcpy(
       no->data + i,
       obj->data + (obj->head.cap - i - obj->head.size),
@@ -141,9 +141,9 @@ ima ima_sort(ima obj, int (*cmp)(const void *a, const void *b, void *len)) {
 }
 
 void const *ima_find(
-  ima obj, void *val, int (*cmp)(const void *a, const void *b, size_t len)
+  ima obj, void *val, int (*cmp)(const void *a, const void *b, ulib_size len)
 ) {
-  for (size_t i = 0; i < obj->head.len; i++) {
+  for (ulib_size i = 0; i < obj->head.len; i++) {
     void const *p = obj->data + i * obj->head.size;
     if (!cmp(p, val, obj->head.size)) {
       return p;
@@ -153,13 +153,14 @@ void const *ima_find(
 }
 
 void const *ima_findall(
-  ima obj, char pattern[], int (*cmp)(const void *a, const void *b, size_t len)
+  ima obj, char pattern[],
+  int (*cmp)(const void *a, const void *b, ulib_size len)
 ) {
   // TODO:
   return NULL;
 }
 
-ima ima_replace(ima obj, ima to, size_t skip, size_t len) {
+ima ima_replace(ima obj, ima to, ulib_size skip, ulib_size len) {
   if (ept_assert(obj->head.size != to->head.size, EPT_INVALIDED_VALUE)) {
     return NULL;
   }
@@ -180,7 +181,7 @@ ima ima_replace(ima obj, ima to, size_t skip, size_t len) {
 
 ima ima_replaceall(
   ima obj, ima pattern, ima to,
-  int (*cmp)(const void *a, const void *b, size_t len)
+  int (*cmp)(const void *a, const void *b, ulib_size len)
 ) {
   // TODO:
   return NULL;

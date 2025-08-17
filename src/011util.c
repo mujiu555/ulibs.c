@@ -5,7 +5,7 @@
 #include <string.h>
 
 int ulib_cmp(const void *a, const void *b, void *len) {
-  size_t size = *(size_t *)len;
+  ulib_size size = *(ulib_size *)len;
 #ifdef LITTLE_ENDIAN
   int flag = ((int)*(int8_t *)a > 0) ? 1 : -1;
   int diff = (int)*(int8_t *)a - (int)*(int8_t *)b;
@@ -19,11 +19,11 @@ int ulib_cmp(const void *a, const void *b, void *len) {
     return -1;
   }
 #if defined(LITTLE_ENDIAN)
-  for (size_t i = 1; i < size; i++) {
+  for (ulib_size i = 1; i < size; i++) {
 #elif defined(BIG_ENDIAN)
   for (int i = size - 2; i >= 0; i--) {
 #endif
-    diff = flag * ((int)*(ulib_u8i *)(a + i) - (int)*(ulib_u8i *)(b + i));
+    diff = flag * ((int)*(ulib_u8 *)(a + i) - (int)*(ulib_u8 *)(b + i));
     if (diff > 0) {
       return 1;
     } else if (diff < 0) {
@@ -40,7 +40,7 @@ int ulib_cmp(const void *a, const void *b, void *len) {
  * @param b pointer points to where need to be swaped
  * @param len bytes to be swaped
  */
-static void util_internal_swap(void *a, void *b, size_t len) {
+static void util_internal_swap(void *a, void *b, ulib_size len) {
   if (ept_nullpointer_exception(a) || ept_nullpointer_exception(b)) {
     return;
   }
@@ -48,7 +48,7 @@ static void util_internal_swap(void *a, void *b, size_t len) {
     // No need to swap
     return;
   }
-  ulib_u8i *tmp[len];
+  ulib_u8 *tmp[len];
   // NOTE: I don't know whether there is problem between big-ending and
   // little-ending
   // aka. potential alignment problem
@@ -70,11 +70,11 @@ static void util_internal_swap(void *a, void *b, size_t len) {
  * @param ctx
  */
 static inline void *internal_continous_pivot(
-  void *left, void *right, size_t size,
+  void *left, void *right, ulib_size size,
   int (*cmp)(const void *a, const void *b, void *ctx), void *ctx
 ) {
-  size_t len = (ptrdiff_t)(right - left) / size + 1;
-  void  *mid = left + (len / 2) * size;
+  ulib_size len = (ptrdiff_t)(right - left) / size + 1;
+  void     *mid = left + (len / 2) * size;
   if (cmp(left, mid, ctx) > 0) {
     util_internal_swap(left, mid, size);
   }
@@ -87,13 +87,13 @@ static inline void *internal_continous_pivot(
   return mid;
 }
 
-static inline size_t internal_linear_pivot(
-  const void *obj, size_t left, size_t right, size_t size,
-  void *(*index)(const void *obj, size_t index, void *ctx),
+static inline ulib_size internal_linear_pivot(
+  const void *obj, ulib_size left, ulib_size right, ulib_size size,
+  void *(*index)(const void *obj, ulib_size index, void *ctx),
   int (*cmp)(const void *a, const void *b, void *ctx), void *ctx
 ) {
-  size_t len = right - left;
-  size_t mid = left + len / 2;
+  ulib_size len = right - left;
+  ulib_size mid = left + len / 2;
 
   if (cmp(index(obj, left, ctx), index(obj, mid, ctx), ctx) > 0) {
     util_internal_swap(index(obj, left, ctx), index(obj, mid, ctx), size);
@@ -124,24 +124,24 @@ static inline size_t internal_linear_pivot(
  * @param ctx
  */
 static void *internal_continous_partation(
-  ulib_u8i **begin, ulib_u8i **end, size_t size,
+  ulib_u8 **begin, ulib_u8 **end, ulib_size size,
   int (*cmp)(const void *a, const void *b, void *ctx), void *ctx
 ) {
   void *const left  = *begin;
   void *const right = *end;
 
-  ulib_u8i *l = left;
-  ulib_u8i *r = right;
+  ulib_u8 *l = left;
+  ulib_u8 *r = right;
 
   // choose initial pivot position
   void *pivot = internal_continous_pivot(l, r, size, cmp, ctx);
   util_internal_swap(pivot, l, size);
 
-  ulib_u8i base[size];
+  ulib_u8 base[size];
   memcpy(base, l, size);
 
-  ulib_u8i *lp = left;
-  ulib_u8i *rp = right;
+  ulib_u8 *lp = left;
+  ulib_u8 *rp = right;
 
   while (l < r) {
     // *right <= base
@@ -169,7 +169,7 @@ static void *internal_continous_partation(
   memcpy(l, &base, size); // *left = *right
 
   // move back variables on the left-most and right-most position to pivot
-  ulib_u8i *i = left, *j = l - size;
+  ulib_u8 *i = left, *j = l - size;
   while (i < j && i < lp) {
     util_internal_swap(i, j, size);
     i += size;
@@ -188,26 +188,26 @@ static void *internal_continous_partation(
   return l;
 }
 
-static size_t internal_linear_partation(
-  void *obj, size_t *begin, size_t *end, size_t size,
-  void *(*index)(const void *obj, size_t idx, void *ctx),
+static ulib_size internal_linear_partation(
+  void *obj, ulib_size *begin, ulib_size *end, ulib_size size,
+  void *(*index)(const void *obj, ulib_size idx, void *ctx),
   int (*cmp)(const void *a, const void *b, void *ctx), void *ctx
 ) {
-  size_t const left  = *begin;
-  size_t const right = *end;
+  ulib_size const left  = *begin;
+  ulib_size const right = *end;
 
-  size_t l = left;
-  size_t r = right;
+  ulib_size l = left;
+  ulib_size r = right;
 
   // choose initial pivot position
-  size_t pivot = internal_linear_pivot(obj, l, r, size, index, cmp, ctx);
+  ulib_size pivot = internal_linear_pivot(obj, l, r, size, index, cmp, ctx);
   util_internal_swap(index(obj, pivot, ctx), index(obj, l, ctx), size);
 
-  ulib_u8i base[size];
+  ulib_u8 base[size];
   memcpy(base, index(obj, l, ctx), size);
 
-  size_t lp = left;
-  size_t rp = right;
+  ulib_size lp = left;
+  ulib_size rp = right;
 
   while (l < r) {
     // *right <= base
@@ -235,7 +235,7 @@ static size_t internal_linear_partation(
   memcpy(index(obj, l, ctx), &base, size); // *left = *right
 
   // move back variables on the left-most and right-most position to pivot
-  size_t i = left, j = l ? l - 1 : 0;
+  ulib_size i = left, j = l ? l - 1 : 0;
   while (i < j && i < lp) {
     util_internal_swap(index(obj, i, ctx), index(obj, j, ctx), size);
     i++;
@@ -265,7 +265,7 @@ static size_t internal_linear_partation(
  * @param ctx
  */
 static void internal_continous_qsort(
-  void *left, void *right, size_t size,
+  void *left, void *right, ulib_size size,
   int (*cmp)(const void *a, const void *b, void *ctx), void *ctx
 ) {
   if (ept_nullpointer_exception(left)             //
@@ -281,8 +281,8 @@ static void internal_continous_qsort(
     return;
   }
 
-  ulib_u8i *l = left;
-  ulib_u8i *r = right;
+  ulib_u8 *l = left;
+  ulib_u8 *r = right;
   //void     *pivot = internal_continous_partation(&l, &r, size, cmp, ctx);
   internal_continous_partation(&l, &r, size, cmp, ctx);
 
@@ -293,8 +293,8 @@ static void internal_continous_qsort(
 }
 
 static void internal_linear_qsort(
-  void *obj, size_t left, size_t right, size_t size,
-  void *(*index)(const void *obj, size_t idx, void *ctx),
+  void *obj, ulib_size left, ulib_size right, ulib_size size,
+  void *(*index)(const void *obj, ulib_size idx, void *ctx),
   int (*cmp)(const void *a, const void *b, void *ctx), void *ctx
 ) {
   if (ept_assert(right < left, EPT_OUTOFBOUND) //
@@ -307,9 +307,9 @@ static void internal_linear_qsort(
     return;
   }
 
-  size_t l = left;
-  size_t r = right;
-  // size_t pivot = internal_linear_partation(obj, &l, &r, size, index, cmp, ctx);
+  ulib_size l = left;
+  ulib_size r = right;
+  // ulib_size pivot = internal_linear_partation(obj, &l, &r, size, index, cmp, ctx);
   internal_linear_partation(obj, &l, &r, size, index, cmp, ctx);
 
   internal_linear_qsort(obj, left, l, size, index, cmp, ctx);
@@ -319,15 +319,15 @@ static void internal_linear_qsort(
 }
 
 void *internal_continous_bsearch(
-  void *begin, void *end, void *target, size_t size,
+  void *begin, void *end, void *target, ulib_size size,
   int (*cmp)(const void *a, const void *b, void *ctx), void *ctx
 ) {
   if (ept_assert(end < begin, EPT_OUTOFBOUND)) {
     return NULL;
   }
   while (begin <= end) {
-    size_t    len = (ptrdiff_t)(end - begin) / size + 1;
-    ulib_u8i *mid = begin + len / 2 * size;
+    ulib_size len = (ptrdiff_t)(end - begin) / size + 1;
+    ulib_u8  *mid = begin + len / 2 * size;
 
     const int r = cmp(mid, target, ctx);
 
@@ -343,16 +343,16 @@ void *internal_continous_bsearch(
 }
 
 void *internal_linear_bsearch(
-  void *obj, void *target, size_t begin, size_t end,
-  void *(*index)(const void *obj, size_t, void *ctx),
+  void *obj, void *target, ulib_size begin, ulib_size end,
+  void *(*index)(const void *obj, ulib_size, void *ctx),
   int (*cmp)(const void *a, const void *b, void *ctx), void *ctx
 ) {
   if (ept_assert(begin > end, EPT_INVALIDED_VALUE)) {
     return NULL;
   }
   while (begin <= end) {
-    size_t len = (end - begin) + 1;
-    size_t mid = begin + len / 2;
+    ulib_size len = (end - begin) + 1;
+    ulib_size mid = begin + len / 2;
 
     const int r = cmp(index(obj, mid, ctx), target, ctx);
 
@@ -368,23 +368,23 @@ void *internal_linear_bsearch(
 }
 
 void (*csort)(
-  void *begin, void *end, size_t size,
+  void *begin, void *end, ulib_size size,
   int (*cmp)(const void *a, const void *b, void *ctx), void *ctx
 ) = internal_continous_qsort;
 
 void *(*ulib_continuous_bsearch)(
-  void *begin, void *end, void *target, size_t size,
+  void *begin, void *end, void *target, ulib_size size,
   int (*cmp)(const void *a, const void *b, void *ctx), void *ctx
 ) = internal_continous_bsearch;
 
 void (*lsort)(
-  void *obj, size_t begin, size_t end, size_t size,
-  void *(*index)(const void *obj, size_t idx, void *ctx),
+  void *obj, ulib_size begin, ulib_size end, ulib_size size,
+  void *(*index)(const void *obj, ulib_size idx, void *ctx),
   int (*cmp)(const void *a, const void *b, void *ctx), void *ctx
 ) = internal_linear_qsort;
 
 void *(*lbsearch)(
-  void *obj, void *target, size_t begin, size_t end,
-  void *(*index)(const void *obj, size_t len, void *ctx),
+  void *obj, void *target, ulib_size begin, ulib_size end,
+  void *(*index)(const void *obj, ulib_size len, void *ctx),
   int (*cmp)(const void *a, const void *b, void *ctx), void *ctx
 ) = internal_linear_bsearch;

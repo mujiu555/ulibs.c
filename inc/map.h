@@ -5,17 +5,17 @@
 #include <stddef.h>
 
 struct ordered_pair_t {
-  size_t id;
-  void *key;
-  void *val;
+  ulib_size id;
+  void     *key;
+  void     *val;
 };
 
 struct ordered_map_t {
   struct {
-    size_t size;
-    size_t cap;
+    ulib_size size;
+    ulib_size cap;
   } head;
-  ulib_u8i container[];
+  ulib_u8 container[];
 };
 
 #endif // !ULIB__MAP_H__

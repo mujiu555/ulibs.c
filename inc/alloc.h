@@ -2,8 +2,9 @@
 #define ULIB__ALLOC_H__
 
 #include <stddef.h>
+#include "util.h"
 
-extern void *(*ulib_alloc)(size_t len);
+extern void *(*ulib_alloc)(ulib_size len);
 
 // TODO: implement a memory pool
 // TODO: implement smart pointer, purely c

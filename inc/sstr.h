@@ -6,11 +6,14 @@
 // UTF-8
 struct Sstr_t {
   struct {
-    size_t   len;
-    size_t   cap;
-    ulib_u8i flag;
+    ulib_size len;
+    ulib_size cap;
+    ulib_u8   flag;
   } head;
-  ulib_u8i data[];
+  ulib_u8 data[];
 };
+
+typedef struct Sstr_t sstr_t;
+typedef sstr_t       *sstr;
 
 #endif // ! ULIB__SSTR_H__

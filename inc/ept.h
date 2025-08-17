@@ -6,6 +6,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#include "util.h"
+
 enum eptno_t {
   EPT_NORMAL,
   EPT_OPTIONAL,
@@ -21,7 +23,7 @@ inline static enum eptno_t ept_nullpointer_exception(const void *p) {
 }
 
 inline static enum eptno_t
-ept_outofbound_exception(size_t boundary, size_t size) {
+ept_outofbound_exception(ulib_size boundary, size_t size) {
   return size >= boundary ? (eptno = EPT_OUTOFBOUND) : (eptno = EPT_NORMAL);
 }
 

@@ -7,8 +7,8 @@ struct linked_list_node_t;
 
 struct linked_list_t {
   struct {
-    size_t   length;
-    ulib_u8i flag;
+    ulib_size length;
+    ulib_u8   flag;
   } head;
   struct linked_list_node_t *begin;
   struct linked_list_node_t *end;
@@ -18,32 +18,32 @@ struct linked_list_t {
 typedef struct linked_list_t list_t;
 typedef list_t              *list;
 
-void *list_index(list obj, size_t idx);
+void *list_index(list obj, ulib_size idx);
 
 list list_init();
 void list_free(list *obj);
 list list_clone(list obj);
 
 // TODO:
-list list_slice(list obj, size_t skip, size_t len);
+list list_slice(list obj, ulib_size skip, ulib_size len);
 list list_concat(list a, list b);
 // NOTE: this will update cache!!!
-list list_insert(list obj, void *data, size_t size, size_t nth);
+list list_insert(list obj, void *data, ulib_size size, ulib_size nth);
 // NOTE: this will update cache!!!
-list list_remove(list obj, size_t skip, size_t len);
+list list_remove(list obj, ulib_size skip, ulib_size len);
 
 list list_sort(
-  list obj, size_t size, int (*cmp)(const void *a, const void *b, void *len)
+  list obj, ulib_size size, int (*cmp)(const void *a, const void *b, void *len)
 );
 list list_reverse(list obj);
 
 void *list_find(
-  list obj, void *val, int (*cmp)(const void *a, const void *b, size_t len)
+  list obj, void *val, int (*cmp)(const void *a, const void *b, ulib_size len)
 );
 // TODO:
 void *list_findall(list obj);
 
-list list_replcae(list obj, list to, size_t skip, size_t len);
+list list_replcae(list obj, list to, ulib_size skip, ulib_size len);
 
 list list_replaceall(list obj, char pattern[]);
 
