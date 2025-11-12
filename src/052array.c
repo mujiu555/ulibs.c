@@ -1,3 +1,4 @@
+#include "alloc.h"
 #include "array.h"
 #include "util.h"
 
